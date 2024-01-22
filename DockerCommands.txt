@@ -1,0 +1,163 @@
+[docker@localhost cursoDockerPruebas]$ cat readmeDocker.txt 
+
+
+
+/****Descarga de Imagenes Oficiales ****/
+
+docker pull postgres:15.3  		//Desacargar la imagen de Postgres
+docker pull jenkins        		//Desacargar la imagen de jenkis 
+docker pull mongo			//Descargar la imagen de docker pull mongo
+
+
+/***************************************/
+
+
+construir una imagen
+crear una carpeta llamada docker-images
+
+crear un archivo de configuracion llamado "Dockerfile" con el siguiente contenido
+
+$ vi Dockerfile
+
+$ cat Dockerfile   //ver contenido
+
+/***********************************************************************************/
+"FROM centos
+
+RUN yum install httpd -y "
+
+/************************************************************************************************/
+
+
+
+Crear imagen desde el Dockerfile
+$ docker build -t apache .
+
+
+Crear el container
+$ docker run -d -p 80:80 apache
+$ docker run --name some-mysql -e MYSQL_ROOT_PASSWORD=my-secret-pw -d mysql:tag
+$ docker run -d -p 3306:3306 --name my-db2 -e "MYSQL_ROOT_PASSWORD=12345" -e "MYSQL_DATABASE=dockerdb" -e "MYSQL_USER=docker" -e "MYSQL_PASSWORD=12345" mysql:8.3
+
+
+Ver procesos docker 
+$ docker ps            //vivos
+$ docker ps -a         // muertos
+$ docker ps --no-trunc  // ver tambien el comando compelto que se esta ejecutando
+$ docker history -H nginx // Ver la historia de la Imagen
+$ docker history -H nginx --no-trunc //Ver completo los comandos
+
+
+/********* borrar container en docker *****/
+docker rm -fv apache
+
+/******************Ver logs del container muerto *******************/
+$ docker logs -f  bold_lamarr    //  bold_lamarr es el nombre del ps muerto (ps=preceso docker)
+/********************************************************************************/
+
+
+$ du shc  * 
+$ mv Dockerfile Dockerfile.backup
+
+docker images | grep nginx
+
+
+
+Interactuar e ingresar dentro del contenedor 
+$ docker exec -i -t bold_fermi /bin/bash      // bold_fermi es el nombre del proceso pso el ID (docker ps)
+docker exec -i -t 1a89f1477110 bash      // bold_fermi es el nombre del proceso ps o el ID (docker ps)
+docker exec -ti f05fa9f2382f bash
+docker exec -ti f05fa9f2382f bash
+docker exec -u root -ti f05fa9f2382f bash  	//Ingresar como root
+
+
+
+
+/****************Configuraciones del Dockerfile FROM , RUN COPY , ADD , ENV, WORKDIR, LABEL, USER, VOLUMEN  *** *********/
+
+ADD	Add local or remote files and directories.
+ARG	Use build-time variables.
+CMD	Specify default commands.
+COPY	Copy files and director ies.
+ENTRYPOINT	Specify default executable.
+ENV	Set environment variables.
+EXPOSE	Describe which ports your application is listening on.
+FROM	Create a new build stage from a base image.
+HEALTHCHECK	Check a container's health on startup.
+LABEL	Add metadata to an image.
+MAINTAINER	Specify the author of an image.
+ONBUILD	Specify instructions for when the image is used in a build.
+RUN	Execute build commands.
+SHELL	Set the default shell of an image.
+STOPSIGNAL	Specify the system call signal for exiting a container.
+USER	Set user and group ID.
+VOLUME	Create volume mounts.
+WORKDIR	Change working directory.
+/***************************************************************************************************************/
+
+RUN echo "1" >> /usr/share/nginx/html/test.txt
+
+
+/*********************************Buenas Pacticas***********************************************/
+
+multilinea y ENV en el Dockerfile
+
+FROM nginx
+
+ENV dir /usr/share/nginx/html/test.txt 
+
+RUN \
+echo "4" >> $dir && \
+echo "5" >> $dir && \
+echo "6" >> $dir
+
+
+/********************************Borrar Imagenes*****************************************************************************/
+$ docker rmi centos:prueba1
+
+
+/************************* cambiar nombre del Dockerfile ejecutar Build on otro nombre del Dockerfile *************/
+$ docker build -t test -f my-dockerfile .
+
+
+
+/***************************************filtar imagenes Dangling = colgadas y eliminarlas**************************************************************/
+$ docker images -f dangling = true -q | xargs docker rmi
+
+/*************************************************************************************************////////
+PHP-FPM (FastCGI Process Manager) 
+
+/******************* build con detalles **************************/
+docker build --progress=plain -t java:3 .
+docker build --progress=plain --verbose -t java:3 .
+
+/********************* Rename Name Iniciar Reiniciar Detener **********/
+
+docker rename romantic_ptoleny jenkins
+docker stop f05fa9f2382f
+docker start f05fa9f2382f
+docker restart f05fa9f2382f
+
+
+/****************  establecer valor y ruta en un archivo con bash**********/
+Crear el archivo 
+echo "test" > /tmp/test
+chmod 400 /tmp/test
+/**************** mover todos los archivos y carpetas ************/
+mv  -v ~/Downloads/* ~/Videos/
+
+/***************** copiar todos los archivos y carpetas **********/
+cp -r ~/Downloads ~/Backups
+
+cp -r ~/Backup/ ~/Curso\ Docker-docker-images/Capitulo-Docker-Imagenes 	// "~/ ->significa retroceda un directorio hacia arriba"
+
+
+/**************** paraver todas las Variablese entorno **************/
+env
+
+/******** crear container y entrar *********////
+docker run --rm -ti centos bash
+
+/******************** mysql from terminal and ports *************/
+mysql -u root -p12345 -h 127.0.0.1 --port 3306
+
