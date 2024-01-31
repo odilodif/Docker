@@ -43,6 +43,7 @@ $ docker run -d -p 3306:3306 --name my-db2 -e "MYSQL_ROOT_PASSWORD=12345" -e "MY
 Ver procesos docker 
 $ docker ps            //vivos
 $ docker ps -a         // muertos
+$ docker ps -l         //el ultimo contenedor creado
 $ docker ps --no-trunc  // ver tambien el comando compelto que se esta ejecutando
 $ docker history -H nginx // Ver la historia de la Imagen
 $ docker history -H nginx --no-trunc //Ver completo los comandos
@@ -127,12 +128,21 @@ $ docker images -f dangling = true -q | xargs docker rmi
 /*************************************************************************************************////////
 PHP-FPM (FastCGI Process Manager) 
 
+
+
+/***************************************************************************************************************************/
+/*********************************** CONTAINERS CONTENEDORES ***************************************************************/
+/***************************************************************************************************************************/
+
 /******************* build con detalles **************************/
 docker build --progress=plain -t java:3 .
 docker build --progress=plain --verbose -t java:3 .
 
-/********************* Rename Name Iniciar Reiniciar Detener **********/
+/************Listar / Mapear puertos**********************************/
+docker ps -a   				//Listar contenedores
 
+
+/********************* Rename Name Iniciar Reiniciar Detener CONTENEDOR **********/
 docker rename romantic_ptoleny jenkins
 docker stop f05fa9f2382f
 docker start f05fa9f2382f
@@ -148,16 +158,195 @@ mv  -v ~/Downloads/* ~/Videos/
 
 /***************** copiar todos los archivos y carpetas **********/
 cp -r ~/Downloads ~/Backups
-
 cp -r ~/Backup/ ~/Curso\ Docker-docker-images/Capitulo-Docker-Imagenes 	// "~/ ->significa retroceda un directorio hacia arriba"
 
 
-/**************** paraver todas las Variablese entorno **************/
+/**************** para ver todas las Variablese Entorno **************/
 env
+
+
+/************* Variables de Entorno en los CONTENEDORES como parametro*******************************/
+$docke run -d -p 5432:5432 --name mypostgres -e "POSTGRES_PASSWORD=12345" -e "POSTGRES_USER=docker" -e "POSTGRES_DB=docker-bd" postgres:16.1
+$docker run -d -p 5432:5432 --name mypostgres -e "POSTGRES_PASSWORD=12345" -e "POSTGRES_USER=docker" -e "POSTGRES_DB=docker-bd" postgres:16.1
+
+
+$ docker run --name some-mysql -e MYSQL_ROOT_PASSWORD=my-secret-pw -d mysql:tag
+$ docker run -d -p 3306:3306 --name my-db2 -e "MYSQL_ROOT_PASSWORD=12345" -e "MYSQL_DATABASE=dockerdb" -e "MYSQL_USER=docker" -e "MYSQL_PASSWORD=12345" mysql:8.3
+
+
+$docker run -d -p 5555:80 -e "ENV=env" -e "VIRTUALIZACION=docker" -m "50mb" --cpuset-cpus 0 --name apacheexamen apache:php
+$ docker run -d -p 8181:80 -e "ENV=stg" -e "VIRTUALIZACION=docker" -e "TYPE=container" -m "100mb" --cpuset-cpus 0-1 --name apacheexamen3 apache:php
 
 /******** crear container y entrar *********////
 docker run --rm -ti centos bash
 
-/******************** mysql from terminal and ports *************/
+/******************** Ingresar a mysql from terminal and ports *************/
 mysql -u root -p12345 -h 127.0.0.1 --port 3306
 
+
+/****************** ver memoria RAM del contenedor *********************/
+$ docker stats mongodb2
+
+
+/************************** ver cpu en centos*******************/
+grep "model name" /proc/cpuinfo | wc -l
+
+/********************** help docker *****************************/
+docker run --help | grep cpu
+
+/********************** definir CPU y Memoria RAM y puertos en el container *******************/
+docker run -d -m "500mb" --cpuset-cpus 0-1 --name mongodb7 mongo:latest
+docker run -d -p 80:80 -m "100mb" --name apachecopy httpd
+
+/*************************** copy cp docker como parametro de afuera haca adentro y de adentro hacia afuera***************/
+docker cp index.html apachecopy:/usr/local/apache2/htdocs/index.html     	//Hacia Adentro
+docker cp apachecopy:/var/log/dpkg.log .					//Hacia Afuera
+
+
+/************************ transformar container a imagen ************************* /
+docker commit centoscommit centoscommit2imageresult    	//centoscommit->nombrecontainer ... centoscommit2imageresult-> nombre de la imagen nueva
+docker run -dti --name centosreuperado centoscommit2imageresult /bin/bash
+
+
+/********************* Sobre escribir el CMD COMMAND ********************////
+docker run -d -p 8080:8080 centos:commit  echo Hola Mundo			// "echo Hola Mundo" ->significa que por bash o comando terminal se va ejecutar "Hola Mundo"
+docker run -d -p 8080:8080 centos:commit python -m SimpleHTTPSServer 8080  	// "python -m SimpleHTTPSServer 8080 ->"comando terminal para que se ejecute un miniserver de Python
+				
+
+/*********************** ver espacio en dico ***********************//////////
+df -h
+du -h
+
+/************************ para BUSCAR logs realizados y guardados en el archivo mysqld.log ********************/
+cd /var/log
+less mysqld.log | grep "temporary password"
+
+Resultado: 2024-01-27T21:16:35.155523Z 6 [Note] [MY-010454] [Server] A temporary password is generated for root@localhost: bcf.yutl5gmD
+
+/********************************************** ver directorio archivos DEL ROOT de Docker ***************************************/
+
+$docker info |grep  -i root
+ Docker Root Dir: /var/lib/docker
+/***************************** montar volume de adentro hacia afuera **************************************/
+docker run -d --name mysqlvolumen -p 3306:3306 -e "MYSQL_ROOT_PASSWORD=12345" -v /opt/mysql/:/var/lib/mysql mysql:8.3   //  -v  -> paraametro volume
+															//  /opt/mysql/  -> directorio LOCAL
+															//  /var/lib/mysql -> directorio contenedor
+															
+/***********************volume anonimo - sin carpeta local o sin montar*****************************/											
+docker run -d --name mysqlvolumen -p 3306:3306 -e "MYSQL_ROOT_PASSWORD=12345" -v /var/lib/docker/volumes/fddf22443f67b5a045a33ec65dcfe5c9b32f6ede53bcaad414820d4094fa76de/_data: /var/lib/mysql mysql:8.3															 
+
+/***********************  volumenes *************************************/
+docker volume ls
+docker volume ls -f dangling=true   //ver volumenes sueltos o dangling
+docker volume ls -f dangling=true -q | xargs docker volume rm   // eliminar todos los volumenes dangling
+docker volume  rm fddf22443f6   	//EliminarVolume
+docker volume  rm --all
+docker volume create mysqlcreatevolume    //Crear volumen nombrado con nombre
+docker run -d --name mysqlvolumen -p 3306:3306 -e "MYSQL_ROOT_PASSWORD=12345" -v mysqlcreatevolume: /var/lib/mysql mysql:8.3 //crear container con volumen nombreado
+
+/********************* crear y persistir  mongoBD *******************/
+ocker run -d -p 27017:27017 -v /opt/mongo/:/data/db mongo:latest
+
+/********************************** para ver archivos del contenedor desde afuera ****************************/
+ docker exec 824d04fdac71 bash -c "cat /var/jenkins_home/secrets/initialAdminPassword"
+ 
+ /******************** para ver logs en vivo *******************/
+ tail -f error.log
+ 
+ /******************* REDES ver redes por defecto *****************************/
+ ip a |grep docker
+ docker inspect gracious_elbakyan  	//inspecionar contenedor
+ docker network ls     			//ver todas las redes
+ docker network ls |grep bridge  	//fitrar por bridge
+ docker network inspect c0afe1632669    //Hacer una inspeccion a la red con ID c0afe1632669
+ docker network inspect bridge		//Hacer una inspeccion a la red con nombre bridge
+ docker inspect  gracious_elbakyan |grep bridge -C 5    //filtrado por bridge con 5 lineas
+ 
+ docker run --network docker-test-network -d --name networktest -ti centos   	//se crea contenedor con red creada docker-test-network
+ 
+ docker network create test-network      //crear red network
+ docker network create docker-test-network     //crear red network
+ 
+ docker run -d --network docker-test-network --name cont1network -ti centos
+ docker run -d --network docker-test-network --name cont2network -ti centos
+ docker run -d --network test-network --name cont3network -ti centos		//se crea contenedor con red creada test-network
+
+ 
+ 
+ docker exec distracted_lumiere bash -c "ping 172.17.0.10"  //hacer ping entre contenedores
+ docker exec cont1network bash -c "ping cont2network"   // ping por el nombre 
+ docker exec cont3network bash -c "ping cont2network"   // no se puede realizar ping por estar en otra red
+ docker network create test-network      //crear red network
+ docker network ls |grep docker-test-network   //filtrar red creada
+ docker network inspect docker-test-network    //inspeccionar red creada
+ 
+ /*********************** conectar contenedores a  diferentes redes 
+
+docker network  connect docker-test-network cont3network   	//  Red docker-test-network se conecta a red del container cont3network
+docker inspect cont3network   		//inspeccionar redes del contenedor
+docker exec cont3network bash -c "ping cont2network"   		//Ahora si hay ping antes no habia por ser redes diferentes
+docker network  disconnect docker-test-network cont3network 	// Para desconectar red	
+docker network rm docker-test-network  				//Eliminar Red pero primero hay eliminar el contenedor "error has active endpoints"
+
+
+docker network  create --subnet 172.128.10.0/24 --gateway 172.128.10.1 -d bridge  my-net  		// crear red con ip definida y gateway
+docker run --network my-net --ip 172.128.10.50 -dti --name  nginx2 centos				//crear contenedor con IP statica  y red definida 
+													// se puede ver con inspect 
+													
+													
+/************************* ver red conectada 
+
+ip a   				// todas
+ip a |gerp wl 			// solo wifi
+ip link show			// todas
+nmcli device status		// wired cableadas
+nmcli connection show		// wired
+
+
+/****************** red con el Host
+docker run --network host -d --name  testnetworkhost -ti centos  // creamos un contenedor con la misma red de la maquina host
+docker exec -ti testnetworkhost bash  //ingresamos al contenedor 
+
+
+/***************** Dcker Compose multi contenedores milticontainers***********************/
+S sudo su				//entrar como superusuario
+$ sudo curl -L "https://github.com/docker/compose/releases/download/1.23.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose  
+//Descargar desde este link pero como superusuario
+
+$ chmod +x /usr/local/bin/docker-compose  	//Permisos para que sea ejecutable
+
+$ /usr/local/bin/docker-compose  		//Solo ejecutar esto
+$ exit 						//salir del superusuario
+$ docker-compose				// ejecutamos "docker-compose" solo para comprobar si esta bie
+docker-compose up -d				//crear container con docker-compose
+docker-compose down				//eliminar compose creado con docker-compose
+docker-compose build				// construir Imagen con docker-compose
+docker-compose build -f docker-compose-uno.yml  up -d // construir container con docker-compose distinto a docker-compose.yml
+docker-compose -p webtest -f docker-compose2.yml up -d  //con docker-compose2.yml y prefijo webtest
+watch -d docker ps				//ver en vivo el comportamiento del container o servicio
+
+
+/**************Container reinicias varias veces configuracion del docker-compose.yml
+version: '3'
+services:
+  test:
+   container_name: test
+   image: restart-image
+   build: .
+   restart: always 			//puede ser unless-stopped / 
+/************************************
+
+
+
+
+
+
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
